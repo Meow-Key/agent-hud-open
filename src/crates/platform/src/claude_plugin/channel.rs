@@ -165,7 +165,15 @@ impl ClaudeChannel {
     /// it is empty, starts with a slash (Claude Code would run a command as the
     /// user) or the session is not running the plugin. Returns its identity.
     /// Each answer clears what earlier ones left, so the folder does not grow.
-    pub fn hand(&self, session: &str, text: &str, now: SystemTime) -> Result<String, Refusal> {
+    /// `as_user` sends the words as the user's own; otherwise they are labelled
+    /// as coming from Agent HUD.
+    pub fn hand(
+        &self,
+        session: &str,
+        text: &str,
+        as_user: bool,
+        now: SystemTime,
+    ) -> Result<String, Refusal> {
         if text.trim().is_empty() {
             return Err(Refusal::InvalidInput("Nothing to send".into()));
         }
@@ -182,7 +190,7 @@ impl ClaudeChannel {
         }
         self.sweep(now);
         let id = identity(now);
-        self.leave(session, &id, text, false, now)?;
+        self.leave(session, &id, text, as_user, now)?;
         Ok(id)
     }
 

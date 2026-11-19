@@ -79,7 +79,7 @@ impl DeepSeekChannel {
     /// Leaves `text` for a loaded `session`; refused when it is empty or
     /// starts with a slash. Returns its identity.
     pub fn hand(&self, session: &str, text: &str, now: SystemTime) -> Result<String, Refusal> {
-        self.prompts.hand(session, text, now)
+        self.prompts.hand(session, text, false, now)
     }
 
     /// How the words `id` left for `session` stand.
