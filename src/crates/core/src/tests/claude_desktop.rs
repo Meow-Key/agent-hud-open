@@ -203,7 +203,7 @@ impl replies::SessionReplies for FakeReplies {
             ))
         }
     }
-    fn reply(&self, source: &str, session: &str, words: &str) -> Result<(), String> {
+    fn reply(&self, source: &str, session: &str, words: &str, _as_user: bool) -> Result<(), String> {
         if let Some(refusal) = self.refusal.lock().unwrap().clone() {
             return Err(refusal);
         }

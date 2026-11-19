@@ -16,7 +16,15 @@ pub trait SessionReplies: Send + Sync {
     /// collection pass for each question that waits, so it must be cheap and
     /// must never wait on the host's own data.
     fn reaches(&self, source: &str, session: &str) -> Result<(), Unreachable>;
-    /// Leaves `words` for that session as its user's next message. Err with
-    /// the reason, in the app's language, when they could not be left.
-    fn reply(&self, source: &str, session: &str, words: &str) -> Result<(), String>;
+    /// Leaves `words` for that session as its user's next message. When
+    /// `as_user` is true, they go in as the user's own, with no Agent HUD
+    /// label; otherwise they stay labelled. Err with the reason, in the app's
+    /// language, when they could not be left.
+    fn reply(
+        &self,
+        source: &str,
+        session: &str,
+        words: &str,
+        as_user: bool,
+    ) -> Result<(), String>;
 }

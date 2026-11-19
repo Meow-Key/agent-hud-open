@@ -124,6 +124,7 @@ impl crate::AgentHudCore {
                 CLAUDE.id,
                 view["sessionId"].as_str().unwrap_or_default(),
                 &words,
+                self.settings["agentMessagesAsUser"] == true,
             )?;
         }
         self.claude_desktop.settled.insert(key);
