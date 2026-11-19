@@ -135,13 +135,13 @@ fn the_huds_answer_records_the_hud_as_its_sender() {
     let data = temp.path().join("data");
     let replies = ClaudeReplies::new(channel.clone(), temp.path().join("claude-config"))
         .recording_deliveries(Some(data.clone()));
-    assert!(replies.reply("claude", SESSION, "Ship it").is_err());
+    assert!(replies.reply("claude", SESSION, "Ship it", false).is_err());
     assert!(
         !data.join("hooks/inbox").exists(),
         "words never left record nothing"
     );
     check_in(&channel, SESSION, br#"{"at":1}"#);
-    replies.reply("claude", SESSION, "Ship it").unwrap();
+    replies.reply("claude", SESSION, "Ship it", false).unwrap();
     let records = fs::read_dir(data.join("hooks/inbox"))
         .unwrap()
         .flatten()
@@ -160,7 +160,7 @@ fn the_huds_answer_goes_to_a_loaded_session_and_tidies_what_was_taken() {
     let replies = ClaudeReplies::new(channel.clone(), temp.path().join("claude-config"));
     let now = SystemTime::now();
     assert_eq!(
-        channel.hand(SESSION, "Install on my iPhone", now),
+        channel.hand(SESSION, "Install on my iPhone", false, now),
         Err(Refusal::NotLoaded)
     );
     assert!(replies
@@ -172,10 +172,10 @@ fn the_huds_answer_goes_to_a_loaded_session_and_tidies_what_was_taken() {
     assert!(replies.reaches("claude", SESSION).is_ok());
     assert!(replies.reaches("codex", SESSION).is_err());
     for refused in ["/clear", "  /compact", "   "] {
-        assert!(channel.hand(SESSION, refused, now).is_err(), "{refused:?}");
+        assert!(channel.hand(SESSION, refused, false, now).is_err(), "{refused:?}");
     }
     let id = channel
-        .hand(SESSION, "Build and install it on my iPhone", now)
+        .hand(SESSION, "Build and install it on my iPhone", false, now)
         .unwrap();
     assert!(valid_name(&id) && id.len() == 36);
     let file = channel
@@ -200,8 +200,42 @@ fn the_huds_answer_goes_to_a_loaded_session_and_tidies_what_was_taken() {
         .unwrap()
         .set_modified(now - Duration::from_secs(120))
         .unwrap();
-    replies.reply("claude", SESSION, "Next release").unwrap();
+    replies.reply("claude", SESSION, "Next release", false).unwrap();
     assert!(!file.exists());
+}
+
+
+#[test]
+fn the_huds_answer_follows_send_as_me() {
+    let temp = tempfile::tempdir().unwrap();
+    let channel = ClaudeChannel::new(temp.path().to_path_buf());
+    let replies = ClaudeReplies::new(channel.clone(), temp.path().join("claude-config"));
+    let now = SystemTime::now();
+    check_in(&channel, SESSION, br#"{"at":1}"#);
+    for (words, as_user) in [("Label this", false), ("Send as me", true)] {
+        let id = channel.hand(SESSION, words, as_user, now).unwrap();
+        let file = channel
+            .directory()
+            .join("prompts")
+            .join(SESSION)
+            .join(format!("{id}.json"));
+        let left: Value = serde_json::from_slice(&fs::read(&file).unwrap()).unwrap();
+        assert_eq!(
+            (left["text"].as_str(), left["asUser"].as_bool()),
+            (Some(words), Some(as_user)),
+            "hand {words}"
+        );
+        replies.reply("claude", SESSION, words, as_user).unwrap();
+        let sent = fs::read_dir(channel.directory().join("prompts").join(SESSION))
+            .unwrap()
+            .flatten()
+            .map(|entry| entry.path())
+            .filter(|path| path.extension().is_some_and(|ext| ext == "json"))
+            .map(|path| serde_json::from_slice::<Value>(&fs::read(&path).unwrap()).unwrap())
+            .find(|value| value["text"] == words && value["id"] != id)
+            .expect(words);
+        assert_eq!(sent["asUser"], as_user, "reply {words}");
+    }
 }
 
 #[test]
