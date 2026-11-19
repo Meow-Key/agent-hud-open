@@ -25,8 +25,9 @@ impl AgentHudCore {
     }
 
     /// Logs still to be read, leaving out those pausing after a failed read,
-    /// which are neither read nor waited for meanwhile.
-    pub(crate) fn waiting_reads(&self) -> usize {
+    /// which are neither read nor waited for meanwhile. The collector rests
+    /// longer after a pass that left as many waiting as before.
+    pub fn waiting_reads(&self) -> usize {
         let now = Utc::now().timestamp_millis();
         self.reads
             .pending

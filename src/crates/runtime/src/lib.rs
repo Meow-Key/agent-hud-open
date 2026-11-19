@@ -208,6 +208,10 @@ impl Runtime {
     pub fn indexing(&self) -> bool {
         self.core.indexing()
     }
+    /// How many logs still wait to be read (`AgentHudCore::waiting_reads`).
+    pub fn waiting_reads(&self) -> usize {
+        self.core.waiting_reads()
+    }
     pub fn next_log_reminder(&self) -> Option<std::time::Instant> {
         self.log_reminders.next_look()
     }
