@@ -75,12 +75,18 @@ impl SessionReplies for ClaudeReplies {
             Err(self.unreachable(session))
         }
     }
-    fn reply(&self, source: &str, session: &str, words: &str) -> Result<(), String> {
+    fn reply(
+        &self,
+        source: &str,
+        session: &str,
+        words: &str,
+        as_user: bool,
+    ) -> Result<(), String> {
         if source != agent_hud_agents::claude::AGENT.id {
             return Err(not_claude());
         }
         let now = SystemTime::now();
-        let handed = self.channel.hand(session, words, now);
+        let handed = self.channel.hand(session, words, as_user, now);
         if let (Ok(_), Some(data)) = (&handed, &self.deliveries) {
             use agent_hud_agents::naming::surfaces::{Category, Surface, AGENT_HUD};
             let at = millis(now) as i64;
