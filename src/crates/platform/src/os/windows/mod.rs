@@ -72,7 +72,9 @@ fn local_app(home: &Path, env: &Environment) -> PathBuf {
 }
 /// Where the Claude desktop app keeps its session metadata: roaming AppData,
 /// and the Microsoft Store package's redirected copy of it
-/// (`Packages\Claude_<publisher>\LocalCache\Roaming\Claude`). Only folders that exist.
+/// (`Packages\Claude_<publisher>\LocalCache\Roaming\Claude`), then the MSIX
+/// app's `%LOCALAPPDATA%\Claude-Data` folders that hold its `config.json`.
+/// Only folders that exist.
 pub(crate) fn claude_desktop_bases(home: &Path, env: &Environment) -> Vec<PathBuf> {
     let mut bases = vec![app_support(home, env).join("Claude")];
     let packages = local_app(home, env).join("Packages");
@@ -90,6 +92,7 @@ pub(crate) fn claude_desktop_bases(home: &Path, env: &Environment) -> Vec<PathBu
         .collect();
     store.sort();
     bases.extend(store);
+    bases.extend(claude::data_profiles(home, env));
     bases.retain(|base| base.is_dir());
     bases
 }
